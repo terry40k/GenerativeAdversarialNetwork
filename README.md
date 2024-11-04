@@ -44,7 +44,7 @@ The notebook utilizes the Stanford Cars Dataset accessed via DeepLake.
 - EPOCHS: 800
 - noise_dim: 100
 - IMAGE_SAVE_INTERVAL: 100 epochs
-- Feel free to adjust these parameters to your liking.  You may want to experiment using a lower batch size (e.g. 32) and buffer size (e.g. 1000) if you don't have the hardware to support it due to the resolution of the Stanford cars dataset.  You still want to have enough variability in there so your generated images don't start having too similar of features
+- Feel free to adjust these parameters to your liking.  You may want to experiment using a lower batch size (e.g. 32) and buffer size (e.g. 1000) if you don't have the hardware to support it due to the resolution of the Stanford cars dataset.  You still want to have enough variability in there so your generated images don't start having too similar of features.  You may also start with a lower epoch threshold as these models do take a long time to train
 
 # Optimizer Settings
 - Uses the Adam optimizer with a learning rate of 1e-4 and beta_1 of 0.5
@@ -57,3 +57,11 @@ The notebook utilizes the Stanford Cars Dataset accessed via DeepLake.
 
 # Checkpoints
 - Model checkpoints are saved every 100 epochs to the ./training_checkpoints_cars_deeplake directory
+
+# Usage
+- You can install the DeepLake libraries as follows:
+   ```sh
+   pip install deeplake
+- You'll also need to install this other DeepLake library as follows:
+   ```sh
+   pip install "deeplake<4"
