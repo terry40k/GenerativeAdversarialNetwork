@@ -1,0 +1,76 @@
+############################################
+# Defines the Generator and Discriminator models
+############################################
+
+def build_generator():
+    noise = layers.Input(shape=(100,))
+    x = layers.Dense(15*23*512, use_bias=False)(noise)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+
+    x = layers.Reshape((15, 23, 512))(x)
+
+    # Upsampling layers
+    x = layers.Conv2DTranspose(256, kernel_size=5, strides=2, padding='same', use_bias=False)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+    # Output shape: (30, 46, 256)
+
+    x = layers.Conv2DTranspose(128, kernel_size=5, strides=2, padding='same', use_bias=False)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+    # Output shape: (60, 92, 128)
+
+    x = layers.Conv2DTranspose(64, kernel_size=5, strides=2, padding='same', use_bias=False)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+    # Output shape: (120, 184, 64)
+
+    x = layers.Conv2DTranspose(32, kernel_size=5, strides=2, padding='same', use_bias=False)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.LeakyReLU()(x)
+    # Output shape: (240, 368, 32)
+
+    # Final Conv2DTranspose layer
+    x = layers.Conv2DTranspose(3, kernel_size=5, strides=1, padding='same', use_bias=False, activation='tanh')(x)
+    # Output shape: (240, 368, 3)
+
+    # Crop to get exact size (240, 360, 3)
+    x = layers.Cropping2D(cropping=((0, 0), (4, 4)))(x)
+    # Output shape: (240, 360, 3)
+
+    model = tf.keras.Model(inputs=noise, outputs=x, name='Generator')
+    return model
+
+generator = build_generator()
+generator.summary()
+
+def build_discriminator():
+    model = tf.keras.Sequential(name='Discriminator')
+
+    # Updated InputLayer with 'shape'
+    model.add(layers.InputLayer(shape=(240, 360, 3)))
+
+    model.add(layers.Conv2D(64, kernel_size=5, strides=2, padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+
+    model.add(layers.Conv2D(128, kernel_size=5, strides=2, padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+
+    model.add(layers.Conv2D(256, kernel_size=5, strides=2, padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+
+    model.add(layers.Conv2D(512, kernel_size=5, strides=2, padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+
+    model.add(layers.Flatten())
+    model.add(layers.Dense(1))
+
+    return model
+
+discriminator = build_discriminator()
+discriminator.summary()
