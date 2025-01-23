@@ -20,7 +20,7 @@ The notebook utilizes the Stanford Cars Dataset accessed via DeepLake.
 # Code Structure
 # Data Loading and Preprocessing
 - Loads the Stanford Cars Dataset from DeepLake
-- Preprocesses images: resizing to (240, 360), normalizez pixel values to [-1, 1]
+- Preprocesses images: resizing to (240, 360), normalizes pixel values to [-1, 1]
 
 # Generator Network
 - Defines a Generator model using tf.keras layers
@@ -41,19 +41,33 @@ The notebook utilizes the Stanford Cars Dataset accessed via DeepLake.
 # Training and Hyperparameters
 - BATCH_SIZE: 128
 - BUFFER_SIZE: 8000
-- EPOCHS: 800
+- EPOCHS: 4100
 - noise_dim: 100
+- num_examples_to_generate = 16
 - IMAGE_SAVE_INTERVAL: 100 epochs
-- Feel free to adjust these parameters to your liking.  You may want to experiment using a lower batch size (e.g. 32) and buffer size (e.g. 1000) if you don't have the hardware to support it due to the resolution of the Stanford cars dataset.  You still want to have enough variability in there so your generated images don't start having too similar of features.  You may also start with a lower epoch threshold as these models do take a long time to train
+- Feel free to adjust these parameters to your liking.  You may want to experiment using a lower batch size (e.g. 32) and buffer size (e.g. 1000) if you don't have the hardware to support it due to the resolution of the Stanford cars dataset and training time required.  You still want to have enough variability in there so your generated images don't start having too similar of features.  In addition, you can tweak the number of examples the model generates (I used 16 to display several fake cars).  You may also start with a lower epoch threshold as these models do take a long time to train
 
 # Optimizer Settings
 - Uses the Adam optimizer with a learning rate of 1e-4 and beta_1 of 0.5
 - You may want to experiment with different learning rates (e.g. the default 1e-3) until you find a good convergence point
+- You can update the optimizer settings by modifying the following parameters:
+  ```sh
+  generator_optimizer = tf.keras.optimizers.Adam(1e-4, beta_1=0.5)
+  discriminator_optimizer = tf.keras.optimizers.Adam(1e-4, beta_1=0.5)
+  ```
 
 # Loss Functions
 - Binary cross-entropy loss is used for both our networks
 - Label smoothing is applied to the real labels in the Discriminator loss
 - We use label smoothing to prevent our Discriminator model from being too good at its predictions, which can result in less reliable when it comes to any new unseen data
+
+# Metrics
+- gen_losses = []
+- disc_losses = []
+- disc_real_accuracies = []
+- disc_fake_accuracies = []
+- interval_epochs = []
+- The model defines loss metrics during training
 
 # Checkpoints
 - Model checkpoints are saved every 100 epochs to the ./training_checkpoints_cars_deeplake directory
