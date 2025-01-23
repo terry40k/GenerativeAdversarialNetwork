@@ -1,0 +1,51 @@
+############################################
+# Training checkpoints/model restoration and training w/ loss and accuracy calculations
+############################################
+
+# Checkpoint to save models
+# Set your checkpoint_dir to your specified folder
+checkpoint_dir = './training_checkpoints_cars_deeplake'
+os.makedirs(checkpoint_dir, exist_ok=True)
+checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+checkpoint = tf.train.Checkpoint(
+    generator_optimizer=generator_optimizer,
+    discriminator_optimizer=discriminator_optimizer,
+    generator=generator,
+    discriminator=discriminator
+)
+
+# Restores latest checkpoint
+latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
+if latest_checkpoint:
+    print(f"Restoring from checkpoint: {latest_checkpoint}")
+    checkpoint.restore(latest_checkpoint)
+else:
+    print("No checkpoint found.")
+
+# Training steps w/ Loss and Accuracy calculations
+@tf.function
+def train_step(images):
+    noise = tf.random.normal([BATCH_SIZE, noise_dim])
+
+    with tf.GradientTape(persistent=True) as tape:
+        generated_images = generator(noise, training=True)
+
+        real_output = discriminator(images, training=True)
+        fake_output = discriminator(generated_images, training=True)
+
+        gen_loss = generator_loss(fake_output)
+        disc_loss = discriminator_loss(real_output, fake_output)
+
+    # Calculate gradients
+    gradients_of_generator = tape.gradient(gen_loss, generator.trainable_variables)
+    gradients_of_discriminator = tape.gradient(disc_loss, discriminator.trainable_variables)
+
+    # Apply gradients
+    generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.trainable_variables))
+    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+
+    # Calculate discriminator accuracy
+    real_accuracy = tf.reduce_mean(tf.cast(real_output > 0.5, tf.float32))
+    fake_accuracy = tf.reduce_mean(tf.cast(fake_output <= 0.5, tf.float32))
+
+    return gen_loss, disc_loss, real_accuracy, fake_accuracy
