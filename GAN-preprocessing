@@ -1,0 +1,57 @@
+import deeplake
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+from tensorflow.keras import layers
+
+############################################
+# Load and preprocess data from Stanford Cars dataset
+############################################
+ds = deeplake.load("hub://activeloop/stanford-cars-train")
+IMG_SIZE = (240, 360)
+
+def preprocess(image):
+    # Convert image to TensorFlow tensor
+    image = tf.convert_to_tensor(image)
+    # Ensure image has shape (height, width, channels)
+    if tf.rank(image) == 2:
+        # Add channel dimension
+        image = tf.expand_dims(image, axis=-1)
+    # Check if the image has 1 channel, convert to 3 channels
+    if image.shape[-1] == 1:
+        image = tf.image.grayscale_to_rgb(image)
+    # Resize images to (240, 360)
+    image = tf.image.resize(image, IMG_SIZE)
+    # Normalize images to [-1, 1]
+    image = (image - 127.5) / 127.5
+    return image
+
+def generator_fn():
+    for sample in ds:
+        image = sample.images.numpy()
+        image = preprocess(image)
+        yield image
+
+############################################
+# Tuning and hyperparameters
+############################################
+
+BATCH_SIZE = 128
+BUFFER_SIZE = 8000
+EPOCHS = 4100
+IMAGE_SAVE_INTERVAL = 100
+noise_dim = 100
+num_examples_to_generate = 16
+generator_optimizer = tf.keras.optimizers.Adam(1e-4, beta_1=0.5)
+discriminator_optimizer = tf.keras.optimizers.Adam(1e-4, beta_1=0.5)
+
+############################################
+# Training dataset
+############################################
+
+train_dataset = tf.data.Dataset.from_generator(
+    generator_fn,
+    output_signature=tf.TensorSpec(shape=(240, 360, 3), dtype=tf.float32)
+)
+train_dataset = train_dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
