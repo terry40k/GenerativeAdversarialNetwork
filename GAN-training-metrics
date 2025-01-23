@@ -1,0 +1,88 @@
+############################################
+# Model training and metrics
+############################################
+
+gen_losses = []
+disc_losses = []
+disc_real_accuracies = []
+disc_fake_accuracies = []
+interval_epochs = []
+
+def train(dataset, epochs, image_save_interval):
+    interval_gen_loss = 0
+    interval_disc_loss = 0
+    interval_real_accuracy = 0
+    interval_fake_accuracy = 0
+    interval_batches = 0
+
+    for epoch in range(epochs):
+        print(f'Starting epoch {epoch+1}/{epochs}')
+        for image_batch in dataset:
+            gen_loss, disc_loss, real_accuracy, fake_accuracy = train_step(image_batch)
+
+            # Accumulates metrics
+            interval_gen_loss += gen_loss
+            interval_disc_loss += disc_loss
+            interval_real_accuracy += real_accuracy
+            interval_fake_accuracy += fake_accuracy
+            interval_batches += 1
+
+        # At interval, computes and stores metrics
+        if (epoch + 1) % image_save_interval == 0 or epoch == 0:
+            avg_gen_loss = interval_gen_loss / interval_batches
+            avg_disc_loss = interval_disc_loss / interval_batches
+            avg_real_accuracy = interval_real_accuracy / interval_batches
+            avg_fake_accuracy = interval_fake_accuracy / interval_batches
+
+            gen_losses.append(avg_gen_loss)
+            disc_losses.append(avg_disc_loss)
+            disc_real_accuracies.append(avg_real_accuracy)
+            disc_fake_accuracies.append(avg_fake_accuracy)
+            interval_epochs.append(epoch + 1)
+
+            # Resets accumulators
+            interval_gen_loss = 0
+            interval_disc_loss = 0
+            interval_real_accuracy = 0
+            interval_fake_accuracy = 0
+            interval_batches = 0
+
+            # Generates and saves images
+            generate_and_save_images(generator, epoch + 1, seed)
+
+            # Prints metrics
+            print(f'Epoch {epoch+1}/{epochs}, '
+                  f'Gen Loss: {avg_gen_loss:.4f}, Disc Loss: {avg_disc_loss:.4f}, '
+                  f'Real Acc: {avg_real_accuracy:.4f}, Fake Acc: {avg_fake_accuracy:.4f}')
+
+        # Saves the model every 100 epochs
+        if (epoch + 1) % 100 == 0:
+            checkpoint.save(file_prefix=checkpoint_prefix)
+            print(f'Model checkpoint saved at epoch {epoch+1}')
+
+train(train_dataset, EPOCHS, IMAGE_SAVE_INTERVAL)
+
+############################################
+# Displays generated images during training
+############################################
+
+def display_generated_images(model, test_input):
+    predictions = model(test_input, training=False)
+    predictions = (predictions + 1) / 2.0  # Rescale to [0, 1]
+
+    fig = plt.figure(figsize=(16, 10))
+
+    for i in range(predictions.shape[0]):
+        plt.subplot(4, 4, i+1)
+        plt.imshow(predictions[i])
+        plt.axis('off')
+
+    plt.show()
+
+############################################
+# Generates new noise vectors and displays the final set of images after training
+############################################
+
+new_seed = tf.random.normal([16, noise_dim])
+print("Generated images after training:")
+display_generated_images(generator, new_seed)
